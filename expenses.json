@@ -1,0 +1,30 @@
+[
+  {
+    "id": "20240919145601",
+    "description": "GD",
+    "amount": 150.0,
+    "category": "Food",
+    "date": "2024-09-19"
+  },
+  {
+    "id": "20240919145617",
+    "description": "movie",
+    "amount": 200.0,
+    "category": "Entertainment",
+    "date": "2024-09-19"
+  },
+  {
+    "id": "20240919145630",
+    "description": "travel",
+    "amount": 56.0,
+    "category": "Transportation",
+    "date": "2024-09-19"
+  },
+  {
+    "id": "20240919145647",
+    "description": "hotel",
+    "amount": 600.0,
+    "category": "Rent",
+    "date": "2024-09-19"
+  }
+]

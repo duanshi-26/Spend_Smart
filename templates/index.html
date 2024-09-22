@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+        }
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: none;
+            transition: transform 0.3s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .btn-primary {
+            background-color: #4e54c8;
+            border-color: #4e54c8;
+        }
+        .btn-primary:hover {
+            background-color: #3f4499;
+            border-color: #3f4499;
+        }
+        .expense-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .list-group-item {
+            border-left: 5px solid #4e54c8;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+        .delete-expense {
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .list-group-item:hover .delete-expense {
+            opacity: 1;
+        }
+        .chart-container {
+            position: relative;
+            margin: auto;
+            height: 300px;
+            width: 300px;
+        }
+        .total-expense {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #4e54c8;
+        }
+        #voiceButton {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+        #commandResult {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Expense Tracker</h1>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-plus-circle me-2"></i>Add New Expense</h5>
+                        <form id="expense-form">
+                            <div class="mb-3">
+                                <input type="text" class="form-control" id="description" placeholder="Description" required>
+                            </div>
+                            <div class="mb-3">
+                                <input type="number" class="form-control" id="amount" placeholder="Amount" step="0.01" required>
+                            </div>
+                            <div class="mb-3">
+                                <select class="form-control" id="category" required>
+                                    <option value="">Select Category</option>
+                                    <option value="Food">Food</option>
+                                    <option value="Transportation">Transportation</option>
+                                    <option value="Entertainment">Entertainment</option>
+                                    <option value="Utilities">Utilities</option>
+                                    <option value="Rent">Rent</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100"><i class="fas fa-save me-2"></i>Add Expense</button>
+                        </form>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="fas fa-list me-2"></i>Expense List</h5>
+                        <ul id="expense-list" class="list-group expense-list">
+                            <!-- Expenses will be added here dynamically -->
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-body text-center">
+                        <h5 class="card-title"><i class="fas fa-chart-pie me-2"></i>Expense Distribution</h5>
+                        <div class="chart-container">
+                            <canvas id="expense-chart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card-body text-center">
+                        <h5 class="card-title"><i class="fas fa-money-bill-wave me-2"></i>Total Expenses</h5>
+                        <p class="total-expense" id="total-expense">$0.00</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <button id="voiceButton" class="btn btn-primary btn-lg rounded-circle">
+        <i class="fas fa-microphone"></i>
+    </button>
+    
+    <div id="commandResult" class="alert alert-info" style="display: none;"></div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const expenseForm = document.getElementById('expense-form');
+            const expenseList = document.getElementById('expense-list');
+            const ctx = document.getElementById('expense-chart').getContext('2d');
+            const totalExpenseElement = document.getElementById('total-expense');
+            let chart;
+
+            expenseForm.addEventListener('submit', addExpense);
+            loadExpenses();
+
+            function addExpense(e) {
+                e.preventDefault();
+                const description = document.getElementById('description').value;
+                const amount = document.getElementById('amount').value;
+                const category = document.getElementById('category').value;
+
+                fetch('/expenses', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ description, amount, category }),
+                })
+                .then(response => response.json())
+                .then(expense => {
+                    addExpenseToList(expense);
+                    updateChart();
+                    updateTotalExpense();
+                    expenseForm.reset();
+                });
+            }
+
+            function loadExpenses() {
+                fetch('/expenses')
+                    .then(response => response.json())
+                    .then(expenses => {
+                        expenseList.innerHTML = '';
+                        expenses.forEach(addExpenseToList);
+                        updateChart();
+                        updateTotalExpense();
+                    });
+            }
+
+            function addExpenseToList(expense) {
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center';
+                li.innerHTML = `
+                    <div>
+                        <strong>${expense.description}</strong>
+                        <span class="badge bg-primary rounded-pill ms-2">$${expense.amount.toFixed(2)}</span>
+                        <br>
+                        <small class="text-muted">${expense.category} - ${expense.date}</small>
+                    </div>
+                    <button class="btn btn-danger btn-sm delete-expense" data-id="${expense.id}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                li.querySelector('.delete-expense').addEventListener('click', deleteExpense);
+                expenseList.appendChild(li);
+            }
+
+            function deleteExpense(e) {
+                const id = e.target.closest('.delete-expense').getAttribute('data-id');
+                fetch(`/expenses/${id}`, { method: 'DELETE' })
+                    .then(() => {
+                        e.target.closest('li').remove();
+                        updateChart();
+                        updateTotalExpense();
+                    });
+            }
+
+            function updateChart() {
+                fetch('/expenses')
+                    .then(response => response.json())
+                    .then(expenses => {
+                        const categories = {};
+                        expenses.forEach(expense => {
+                            categories[expense.category] = (categories[expense.category] || 0) + expense.amount;
+                        });
+
+                        const data = {
+                            labels: Object.keys(categories),
+                            datasets: [{
+                                data: Object.values(categories),
+                                backgroundColor: [
+                                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'
+                                ]
+                            }]
+                        };
+
+                        if (chart) {
+                            chart.destroy();
+                        }
+
+                        chart = new Chart(ctx, {
+                            type: 'doughnut',
+                            data: data,
+                            options: {
+                                responsive: true,
+                                plugins: {
+                                    legend: {
+                                        position: 'bottom',
+                                    },
+                                    title: {
+                                        display: true,
+                                        text: 'Expense Distribution'
+                                    }
+                                }
+                            }
+                        });
+                    });
+            }
+
+            function updateTotalExpense() {
+                fetch('/expenses')
+                    .then(response => response.json())
+                    .then(expenses => {
+                        const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+                        totalExpenseElement.textContent = `$${total.toFixed(2)}`;
+                    });
+            }
+
+            // Voice command functionality
+            const voiceButton = document.getElementById('voiceButton');
+            const commandResult = document.getElementById('commandResult');
+            
+            let recognition;
+            if ('webkitSpeechRecognition' in window) {
+                recognition = new webkitSpeechRecognition();
+                recognition.continuous = false;
+                recognition.lang = 'en-US';
+            
+                recognition.onresult = function(event) {
+                    const command = event.results[0][0].transcript;
+                    processVoiceCommand(command);
+                };
+            
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error', event.error);
+                    commandResult.textContent = "Error: " + event.error;
+                    commandResult.style.display = 'block';
+                };
+            }
+            
+            voiceButton.addEventListener('click', function() {
+                if (recognition) {
+                    recognition.start();
+                    commandResult.textContent = "Listening...";
+                    commandResult.style.display = 'block';
+                } else {
+                    commandResult.textContent = "Speech recognition not supported in this browser.";
+                    commandResult.style.display = 'block';
+                }
+            });
+            
+            function processVoiceCommand(command) {
+                fetch('/process_voice_command', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ command: command }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    commandResult.textContent = data.message;
+                    commandResult.style.display = 'block';
+                    if (data.expense) {
+                        addExpenseToList(data.expense);
+                        updateChart();
+                        updateTotalExpense();
+                    }
+                    loadExpenses();  // Refresh the expense list
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    commandResult.textContent = "Error processing command.";
+                    commandResult.style.display = 'block';
+                });
+            }
+        });
+    </script>
+</body>
+</html>
