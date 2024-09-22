@@ -1,4 +1,4 @@
-# Expense Tracker
+# Spend Smart
 
 An interactive web application that helps users track their daily expenses, visualize their spending patterns, and manage their budget. The Expense Tracker includes voice command capabilities, enabling users to add or remove expenses using speech recognition.
 
