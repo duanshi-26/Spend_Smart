@@ -15,7 +15,7 @@ An interactive web application that helps users track their daily expenses, visu
 
 ### Prerequisites
 
-* Python 3.x
+* Python 3.10
 * Flask
 * JavaScript libraries: Bootstrap, Chart.js, Font Awesome
 
