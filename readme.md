@@ -23,7 +23,7 @@ An interactive web application that helps users track their daily expenses, visu
 
 1. Clone this repository:
     ```bash
-    git clone https://github.com/yourusername/expense-tracker.git
+    git clone https://github.com/duanshi-26/Spend_Smart.git
     cd expense-tracker
     ```
 
